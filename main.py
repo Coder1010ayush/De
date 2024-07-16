@@ -1,6 +1,8 @@
 # ------------ utf-8 encoding ----------------
 from autodiff.diff import Tensor
 from initializes.random_init import Initializer
+from nn.linear import Linear
+from nn.module import Module, Sequential
 import os
 import sys
 import json
@@ -34,7 +36,7 @@ def test1():
     print("input3 grad is ", c.grad)
 
 
-if __name__ == "__main__":
+def test_second():
     x1 = Initializer().randn(shape=(300, 20, 20), dtype=np.float32, requires_grad=True)
     weight = Initializer().randn(shape=(1, 20), dtype=float, requires_grad=True)
     weight.transpose()
@@ -48,3 +50,30 @@ if __name__ == "__main__":
     print("out1 shape is ", out1.shape())
     print("out shape is ", out.shape())
     out.backpropogate()
+
+
+def testing_simple_linear_layer():
+    model = Linear(in_features=10, out_features=5, bias_option=True)
+    data = Tensor(data=np.random.rand(300, 10), requires_grad=True, dtype=np.float64)
+    out = model(data)
+    print(out)
+    print(out.shape())
+    out.backpropogate()
+
+
+def testin_sequential_layer():
+    data = Tensor(data=np.random.rand(300, 20), requires_grad=True, dtype=np.float64)
+    model = Sequential(
+        Linear(in_features=20, out_features=10, bias_option=True),
+        Linear(in_features=10, out_features=20, bias_option=True)
+    )
+    out = model(data)
+    out.backpropogate()
+    return out
+
+
+if __name__ == "__main__":
+    # testing_simple_linear_layer()
+    out = testin_sequential_layer()
+    print(out)
+    print(out.shape())
