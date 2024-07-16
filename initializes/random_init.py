@@ -24,3 +24,19 @@ class Initializer:
     def normal(self, shape, requires_grad=False, loc=0, scale=0.5):
         data = np.random.normal(loc=loc, scale=scale, size=shape)
         return Tensor(data=data, requires_grad=requires_grad, dtype=float)
+
+    def xaviar_uniform(self, shape, n_in, n_out, requires_grad=False):
+        data = np.random.uniform(low=-np.sqrt(6/(n_in+n_out)), high=np.sqrt(6/(n_in+n_out)), size=shape)
+        return Tensor(data=data, dtype=data.dtype, requires_grad=requires_grad)
+
+    def xavier_normal(self, shape, n_in, n_out, requires_grad=False):
+        data = np.random.normal(size=shape, loc=0, scale=2/(n_in+n_out))
+        return Tensor(data=data, requires_grad=requires_grad, dtype=data.dtype)
+
+    def lecun_uniform(self, shape, n_in, requires_grad=False):
+        data = np.random.uniform(size=shape, low=-np.sqrt(1/n_in), high=np.sqrt(1/n_in))
+        return Tensor(data=data, requires_grad=requires_grad, dtype=data.dtype)
+
+    def lecun_normal(self, shape, n_in, requires_grad=False):
+        data = np.random.normal(size=shape, loc=0, scale=1/n_in)
+        return Tensor(data=data, requires_grad=requires_grad, dtype=data.dtype)

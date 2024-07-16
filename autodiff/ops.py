@@ -129,12 +129,14 @@ class Transpose:
         as transpose the data of tensor object similarly the backward of that
         tensor object will be transposed.
     """
+    axis = None
 
     def forward(self, inp: Tensor, axis: None):
+        self.axis = axis
         inp.data = np.transpose(a=inp.data, axes=axis)
 
-    def backward(self, inp: Tensor, axis: None):
-        inp.grad = np.transpose(a=inp.grad, axes=axis)
+    def backward(self, inp: Tensor):
+        inp.grad = np.transpose(a=inp.grad, axes=self.axis)
 
 
 class Permutation:
@@ -143,12 +145,14 @@ class Permutation:
         as permute the data of tensor object similarly the backward of that
         tensor object will be permuted.
     """
+    axis = None
 
     def forward(self, inp: Tensor, axis=None):
-        self.data = np.transpose(a=inp.data, axes=axis)
+        self.axis = axis
+        self.data = np.transpose(a=inp.data, axes=self.axis)
 
-    def backward(self, out: Tensor, axis=None):
-        out.grad = np.transpose(a=out.grad, axes=axis)
+    def backward(self, out: Tensor):
+        out.grad = np.transpose(a=out.grad, axes=self.axis)
 
 
 class Log:
@@ -224,8 +228,31 @@ class MultiplicationEWise:
 
     def backward(self, output_node: Tensor):
         op1, op2 = output_node.inputs_node
-        op1.grad = output_node.grad * np.full(shape=op2.data.shape, fill_value=op2.data)
-        op2.grad = output_node.grad * np.full(shape=op1.data.shape, fill_value=op1.data)
+        grad = output_node.grad
+
+        if op1.requires_grad:
+            grad_op1 = grad * op2.data
+            while len(grad_op1.shape) > len(op1.data.shape):
+                grad_op1 = np.sum(grad_op1, axis=0)
+            for axis, size in enumerate(op1.data.shape):
+                if size == 1:
+                    grad_op1 = np.sum(grad_op1, axis=axis, keepdims=True)
+            if op1.grad is None:
+                op1.grad = grad_op1
+            else:
+                op1.grad += grad_op1
+
+        if op2.requires_grad:
+            grad_op2 = grad * op1.data
+            while len(grad_op2.shape) > len(op2.data.shape):
+                grad_op2 = np.sum(grad_op2, axis=0)
+            for axis, size in enumerate(op2.data.shape):
+                if size == 1:
+                    grad_op2 = np.sum(grad_op2, axis=axis, keepdims=True)
+            if op2.grad is None:
+                op2.grad = grad_op2
+            else:
+                op2.grad += grad_op2
 
 
 class Multiplication:
@@ -285,3 +312,27 @@ class DivisionEWise:
 
         op1.grad += output_node.grad / op2.data
         op2.grad += output_node.grad * (-op1.data / (op2.data ** 2))
+
+
+class Summation:
+    axis = None
+
+    def forward(self, inp: Tensor, axis=None):
+        self.axis = axis
+        out = np.sum(a=inp.data, axis=self.axis, dtype=inp.data.dtype, keepdims=True)
+        return Tensor(data=out, dtype=inp.dtype, requires_grad=inp.requires_grad, inputs_node=[inp], operation="Backward<Summation>")
+
+    def backward(self, output_node: Tensor):
+        o1 = output_node.inputs_node[0]
+        if o1.requires_grad:
+            grad_output = output_node.grad
+            # Expand the output gradient to match the input tensor's shape
+            if self.axis is not None:
+                grad_output = np.expand_dims(grad_output, axis=self.axis)
+                repeat_dims = o1.data.shape
+                grad_output = np.broadcast_to(grad_output, repeat_dims)
+
+            if o1.grad is None:
+                o1.grad = grad_output
+            else:
+                o1.grad += grad_output

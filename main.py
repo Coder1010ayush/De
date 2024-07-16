@@ -36,7 +36,8 @@ def test1():
 
 if __name__ == "__main__":
     x1 = Initializer().randn(shape=(300, 20, 20), dtype=np.float32, requires_grad=True)
-    weight = Initializer().randn(shape=(20, 1), dtype=float, requires_grad=True)
+    weight = Initializer().randn(shape=(1, 20), dtype=float, requires_grad=True)
+    weight.transpose()
     bias = Tensor(data=0, requires_grad=True, dtype=np.float32)
     out1 = x1.matmul(weight)
     out = out1 + bias

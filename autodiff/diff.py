@@ -75,10 +75,16 @@ class Tensor:
     def __truediv(self, other):
         return autodiff.div(o1=self, o2=other)
 
-    def __pow__(self, other):
-        pass
+    def reshape(self, shape):
+        return autodiff.reshape(inp=self, shape=shape)
 
-    def sum(self):
+    def transpose(self):
+        return autodiff.transpose(inp=self, axis=None)
+
+    def summation(self, axis: None):
+        return autodiff.summation(inp=self, axis=axis)
+
+    def __pow__(self, other):
         pass
 
     def mean(self):
