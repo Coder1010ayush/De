@@ -3,7 +3,7 @@ import autodiff
 import os
 import sys
 import numpy as np
-from utility import data_to_numpy
+from autodiff.utility import data_to_numpy
 TENSOR_COUNTER = 0
 mode = "forward"
 
@@ -43,19 +43,17 @@ class Tensor:
     def backpropogate(self):
         if not self.requires_grad:
             raise ValueError("Gradient tracking is not enabled for this tensor.")
-
-        self.grad = np.ones_like(self.data, dtype=self.data.dtype)
+        self.grad = np.ones(shape=self.data.shape, dtype=self.data.dtype)
         nodes_to_process = [self]
 
         while nodes_to_process:
             current_node = nodes_to_process.pop()
-
             if current_node.inputs_node:
                 if current_node.operation:
                     operation_class = getattr(autodiff.ops, current_node.operation.split('<')[1].strip('>'))
                     operation_instance = operation_class()
 
-                    operation_instance.gradient(current_node)
+                    operation_instance.backward(current_node)
 
                 for input_node in current_node.inputs_node:
                     if input_node.requires_grad:
@@ -69,10 +67,13 @@ class Tensor:
         return autodiff.subtract(o1=self, o2=other)
 
     def __mul__(self, other):
-        pass
+        return autodiff.mul(o1=self, o2=other)
+
+    def matmul(self, other):
+        return autodiff.matmul(o1=self, o2=other)
 
     def __truediv(self, other):
-        pass
+        return autodiff.div(o1=self, o2=other)
 
     def __pow__(self, other):
         pass
@@ -87,7 +88,7 @@ class Tensor:
         return autodiff.log(inp=self)
 
     def exp(self):
-        pass
+        return autodiff.exp(inp=self)
 
     def sin(self):
         pass
@@ -96,12 +97,6 @@ class Tensor:
         pass
 
     def tan(self):
-        pass
-
-    def sinh(self):
-        pass
-
-    def consh(self):
         pass
 
     def tanh(self):

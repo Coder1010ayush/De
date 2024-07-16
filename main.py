@@ -1,11 +1,13 @@
 # ------------ utf-8 encoding ----------------
 from autodiff.diff import Tensor
+from initializes.random_init import Initializer
 import os
 import sys
 import json
 import numpy as np
 
-if __name__ == "__main__":
+
+def test1():
     ob1 = Tensor(data=[1, 2, 3], dtype=np.float16, requires_grad=True)
     ob2 = Tensor(data=[3, 10, 12], dtype=np.float16, requires_grad=True)
     out1 = ob1 + ob2
@@ -30,3 +32,18 @@ if __name__ == "__main__":
     print("input1 grad is ", ob1.grad)
     print("input2 grad is ", ob2.grad)
     print("input3 grad is ", c.grad)
+
+
+if __name__ == "__main__":
+    x1 = Initializer().randn(shape=(300, 20, 20), dtype=np.float32, requires_grad=True)
+    weight = Initializer().randn(shape=(20, 1), dtype=float, requires_grad=True)
+    bias = Tensor(data=0, requires_grad=True, dtype=np.float32)
+    out1 = x1.matmul(weight)
+    out = out1 + bias
+
+    print("x1 shape is ", x1.shape())
+    print("weight shape is ", weight.shape())
+    print("bias shape is ", bias.shape())
+    print("out1 shape is ", out1.shape())
+    print("out shape is ", out.shape())
+    out.backpropogate()
