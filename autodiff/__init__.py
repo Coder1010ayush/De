@@ -1,7 +1,7 @@
 # -------------- utf-8 encoding --------------
 import autodiff
 import autodiff.diff
-from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation
+from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation, Concatenate
 
 
 def add(o1, o2):
@@ -29,6 +29,13 @@ def mul(o1, o2):
     else:
         out = MultiplicationEWise().forward(op1=o1, op2=o2)
         return out
+
+
+def cat(self, axis):
+    if axis:
+        return Concatenate().forward(inputs=self, axis=axis)
+    else:
+        return Concatenate().forward(inputs=self, axis=0)
 
 
 def flip(self, axis):

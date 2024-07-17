@@ -1,7 +1,7 @@
 # ------------ utf-8 encoding ----------------
 from autodiff.diff import Tensor
 from initializes.random_init import Initializer
-from nn.linear import Linear, Embedding
+from nn.networkx import Linear, Embedding
 from nn.module import Module, Sequential
 import os
 import sys

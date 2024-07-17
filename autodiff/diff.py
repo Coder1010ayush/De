@@ -93,6 +93,10 @@ class Tensor:
     def stack(dim, tensors):
         return autodiff.stack(dim, tensors)
 
+    @staticmethod
+    def cat(inputs, axis: None):
+        return autodiff.cat(self=inputs, axis=axis)
+
     def __pow__(self, other):
         pass
 

@@ -266,6 +266,34 @@ class Mean:
         param.grad *= output_node.grad/param.data.size
 
 
+class Concatenate:
+    """_summary_
+        This class defines the forward and backward pass for concatenating
+        multiple tensor objects along a specified axis.
+    """
+
+    def __init__(self):
+        pass
+
+    def forward(self, inputs, axis=0):
+        self.axis = axis
+        out = np.concatenate([inp.data for inp in inputs], axis=self.axis)
+        return Tensor(data=out, dtype=inputs[0].dtype, requires_grad=any(inp.requires_grad for inp in inputs),
+                      inputs_node=inputs, operation="Backward<Concatenate>", axis=self.axis)
+
+    def backward(self, output_node: Tensor):
+        grad = output_node.grad
+        input_grads = []
+
+        for inp in output_node.inputs_node:
+            input_grad = np.sum(grad, axis=output_node.axis, keepdims=True) * np.ones_like(inp.data)
+            input_grads.append(input_grad)
+
+        for i, inp in enumerate(output_node.inputs_node):
+            if inp.requires_grad:
+                inp.grad = input_grads[i]
+
+
 class MultiplicationScalar:
     def forward(self, op1, op2):  # op2 is scalar and op1 is tensor
         pass

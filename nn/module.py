@@ -32,6 +32,10 @@ class Module:
         for module in self._modules.values():
             module.eval()
 
+    def add_module(self, name, module):
+        """Add a child module to the current module."""
+        self._modules[name] = module
+
 
 class Sequential(Module):
     """
@@ -61,3 +65,9 @@ class Sequential(Module):
         self.training = False
         for layer in self.layers:
             layer.eval()
+
+    def __repr__(self) -> str:
+        strg = ""
+        for layer in self.layers:
+            strg += repr(layer)+",\n"
+        return strg
