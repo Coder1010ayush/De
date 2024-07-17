@@ -9,7 +9,8 @@ def data_to_numpy(data, dtype):
         return np.array(object=data)
     elif isinstance(data, float):
         return np.array(data)
-
+    elif isinstance(data, np.ndarray):
+        return data
     # list or nested list are given
     else:
         return np.array(object=data, dtype=dtype)

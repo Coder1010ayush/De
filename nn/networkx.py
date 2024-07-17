@@ -2,7 +2,7 @@
 from nn.module import Module
 from autodiff.diff import Tensor
 from initializes.random_init import Initializer
-from nn.functonal import Sigmoid, Relu, Tanh
+from nn.functonal import sigmoid, relu, tanh
 import numpy as np
 import os
 import sys
@@ -71,27 +71,47 @@ class RNNCell(Module):
         self.hidden_size = hidden_size
         self.bias_option = bias_option
         self.non_linearity = non_linear_act
-        self.w_ih = Tensor(data=rinit.lecun_uniform(shape=(self.hidden_size, self.input_size),
-                           n_in=self.hidden_size, requires_grad=True))
-        self.w_hh = Tensor(data=rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
-                           n_in=self.hidden_size, requires_grad=True))
+        self.w_ih = rinit.lecun_uniform(shape=(self.hidden_size, self.input_size),
+                                        n_in=self.hidden_size, requires_grad=True)
+        self.w_hh = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                        n_in=self.hidden_size, requires_grad=True)
         if bias_option:
-            self.bias_ih = Tensor(data=rinit.lecun_uniform(
-                shape=(self.hidden_size), n_in=self.hidden_size, requires_grad=True))
-            self.bias_hh = Tensor(data=rinit.lecun_uniform(
-                shape=(self.hidden_size), n_in=self.hidden_size, requires_grad=True))
+            self.bias_ih = rinit.lecun_uniform(
+                shape=(self.hidden_size, 1), n_in=self.hidden_size, requires_grad=True)
+            self.bias_hh = rinit.lecun_uniform(
+                shape=(self.hidden_size, 1), n_in=self.hidden_size, requires_grad=True)
             self._parameters = {'weight_ih': self.w_ih, 'bias_ih': self.bias_ih,
                                 "weight_hh": self.w_hh, "bias_hh": self.bias_hh}
         else:
             self._parameters = {'weight_ih': self.w_ih, "weight_hh": self.w_hh}
 
     def forward(self, x: Tensor, hx: Tensor):
+        print("x shape is ", x.shape())
+        print("hx shape is ", hx.shape())
+        print("w_ih shape is ", self.w_ih.shape())
+        print("w_hh shape is ", self.w_hh.shape())
         if self.bias_option:
+            x.transpose()
+            hx.transpose()
             h_new = self.w_ih.matmul(x) + self.bias_ih + self.w_hh.matmul(hx) + self.bias_hh
-            return h_new
+            if self.non_linearity == "relu":
+                h_out = relu(inp_tensor=h_new)
+                return h_out
+            else:
+                h_out = sigmoid(inp_tensor=h_new)
+                return h_out
         else:
             h_new = self.w_ih.matmul(x) + self.w_hh.matmul(hx)
-            return h_new
+            if self.non_linearity == "relu":
+                h_out = relu(inp_tensor=h_new)
+                return h_out
+            else:
+                h_out = sigmoid(inp_tensor=h_new)
+                return h_out
+
+    def __repr__(self):
+        strg = f"nn.RNNCell{self.input_size,self.hidden_size}"
+        return strg
 
 
 class GRUCell(Module):
@@ -125,9 +145,9 @@ class GRUCell(Module):
 
     def forward(self, x: Tensor, hx: Tensor):
         out = Tensor.cat(inputs=[x, hx], axis=1)
-        r_out = Sigmoid().forward(inp_tensor=self.reset_gate(out))
-        u_out = Sigmoid().forward(inp_tensor=self.update_gate(out))
-        f_out = Sigmoid().forward(inp_tensor=self.forget_gate(Tensor.cat([x, r_out * hx], axis=1)))
+        r_out = sigmoid(inp_tensor=self.reset_gate(out))
+        u_out = sigmoid(inp_tensor=self.update_gate(out))
+        f_out = sigmoid(inp_tensor=self.forget_gate(Tensor.cat([x, r_out * hx], axis=1)))
         h_new = (Tensor(data=1, requires_grad=True, dtype=np.float32) - u_out) * (f_out + (u_out * hx))
         return h_new
 

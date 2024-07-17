@@ -1,7 +1,7 @@
 # ------------ utf-8 encoding ----------------
 from autodiff.diff import Tensor
 from initializes.random_init import Initializer
-from nn.networkx import Linear, Embedding
+from nn.networkx import Linear, Embedding, RNNCell, GRUCell, LSTMCell
 from nn.module import Module, Sequential
 import os
 import sys
@@ -110,11 +110,14 @@ def testing_embedding_layer():
     print("output grad is ", out.grad.shape)
 
 
+def testin_rnn_cell():
+    data = Initializer().rand(shape=(500, 10), dtype=np.float32, mean=0.5, std=1.0, requires_grad=True)
+    model = RNNCell(input_size=10, hidden_size=20, bias_option=True, non_linear_act="sigmoid")
+    hx = Initializer().rand(shape=(500, 20), dtype=np.float32, mean=0.5, std=1.0, requires_grad=True)
+    out = model(data, hx)
+    print(out)
+    out.backpropogate()
+
+
 if __name__ == "__main__":
-    # testing_simple_linear_layer()
-    # out = testin_sequential_layer()
-    # print(out)
-    # print(out.shape())
-    # testing_stack_operation()
-    testing_flip_operation()
-    # testing_embedding_layer()
+    testin_rnn_cell()
