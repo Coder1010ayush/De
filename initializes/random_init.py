@@ -13,6 +13,26 @@ class Initializer:
         data = np.random.rand(*shape)
         return Tensor(data=data, dtype=dtype, requires_grad=requires_grad)
 
+    def rand(self, shape, dtype, mean, std, requires_grad=False):
+        data = np.random.rand(*shape)*std + mean
+        return Tensor(data=data, requires_grad=requires_grad, dtype=data.dtype)
+
+    def identity(self, n, dtype, requires_grad=False):
+        data = np.identity(n=n, dtype=dtype)
+        return Tensor(data=data, requires_grad=requires_grad, dtype=dtype)
+
+    def ones(self, shape, dtype, requires_grad=False):
+        data = np.ones(shape=shape, dtype=dtype)
+        return Tensor(data=data, requires_grad=requires_grad, dtype=dtype)
+
+    def zeros(self, shape, dtype, requires_grad=False):
+        data = np.zeros(shape=shape, dtype=dtype)
+        return Tensor(data=data, requires_grad=requires_grad, dtype=dtype)
+
+    def constants(self, shape, val, dtype, requires_grad=False):
+        data = np.full(shape=shape, fill_value=val, dtype=dtype)
+        return Tensor(data=data, requires_grad=requires_grad, dtype=dtype)
+
     def arange(self, n1=0, n2=100, dtype=np.float32, requires_grad=False):
         data = np.arange(start=n1, step=n2, dtype=dtype)
         return Tensor(data=data, requires_grad=requires_grad, dtype=dtype)

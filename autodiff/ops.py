@@ -134,9 +134,29 @@ class Transpose:
     def forward(self, inp: Tensor, axis: None):
         self.axis = axis
         inp.data = np.transpose(a=inp.data, axes=axis)
+        inp.axis = self.axis
 
     def backward(self, inp: Tensor):
-        inp.grad = np.transpose(a=inp.grad, axes=self.axis)
+        inp.grad = np.transpose(a=inp.grad, axes=inp.axis)
+
+
+class Stack:
+    dim = None
+
+    def __init__(self) -> None:
+        pass
+
+    def forward(self, dim, tensors):
+        self.dim = dim
+        requires_grad = any(tensor.requires_grad for tensor in tensors)
+        data = np.stack([tensor.data for tensor in tensors], axis=self.dim)
+        return Tensor(data=data, requires_grad=requires_grad, dtype=data.dtype, inputs_node=tensors, operation="Backward<Stack>", axis=self.dim)
+
+    def backward(self, output_node: Tensor):
+        tensors = output_node.inputs_node
+        grads = np.split(output_node.grad, indices_or_sections=len(tensors), axis=output_node.axis)
+        for tensor, grad_part in zip(tensors, grads):
+            tensor.grad = grad_part.squeeze(self.dim)
 
 
 class Permutation:
@@ -188,6 +208,46 @@ class Exp:
         param = output_node.inputs_node[0]
         param.grad = np.ones_like(a=param.data)
         param.grad *= output_node.grad * np.exp(param.data)
+
+
+class Sin:
+    def forward(self, inp: Tensor):
+        out = np.sin(inp.data)
+        return Tensor(data=out, requires_grad=inp.requires_grad, dtype=out.dtype, inputs_node=[inp], operation="Backward<Sin>")
+
+    def backward(self, output_node: Tensor):
+        inputs = output_node.inputs_node[0]
+        inputs.grad = np.cos(inputs.data) * output_node
+
+
+class Cos:
+    def forward(self, inp: Tensor):
+        out = np.cos(inp.data)
+        return Tensor(data=out, requires_grad=inp.requires_grad, dtype=out.dtype, inputs_node=[inp], operation="Backward<Cos>")
+
+    def backward(self, output_node: Tensor):
+        inputs = output_node.inputs_node[0]
+        inputs.grad = -np.sin(inputs.data) * output_node
+
+
+class Max:
+    def forward(self, inp_tensor: Tensor, axis=None, keep_dims=False):
+        self.axis = axis
+        self.keep_dims = keep_dims
+        out = np.max(a=inp_tensor.data, axis=self.axis, keepdims=self.keep_dims)
+        return Tensor(out, out.dtype, inp_tensor.requires_grad, "Backward<Max>",  [inp_tensor], self.axis, [self.keep_dims])
+
+    def backward(self, output_node: Tensor):
+        input_tensor = output_node.inputs_node[0]
+        keep_dims = output_node.params[0]
+        axis = output_node.axis
+
+        grad = output_node.grad
+        expanded_grad = np.expand_dims(grad, axis=axis) if not keep_dims else grad
+
+        max_mask = (input_tensor.data == np.expand_dims(output_node.data,
+                    axis=axis) if not keep_dims else output_node.data)
+        input_tensor.grad = max_mask * expanded_grad
 
 
 class Mean:
@@ -320,7 +380,7 @@ class Summation:
     def forward(self, inp: Tensor, axis=None):
         self.axis = axis
         out = np.sum(a=inp.data, axis=self.axis, dtype=inp.data.dtype, keepdims=True)
-        return Tensor(data=out, dtype=inp.dtype, requires_grad=inp.requires_grad, inputs_node=[inp], operation="Backward<Summation>")
+        return Tensor(data=out, dtype=inp.dtype, requires_grad=inp.requires_grad, inputs_node=[inp], operation="Backward<Summation>", axis=self.axis)
 
     def backward(self, output_node: Tensor):
         o1 = output_node.inputs_node[0]
@@ -328,7 +388,7 @@ class Summation:
             grad_output = output_node.grad
             # Expand the output gradient to match the input tensor's shape
             if self.axis is not None:
-                grad_output = np.expand_dims(grad_output, axis=self.axis)
+                grad_output = np.expand_dims(grad_output, axis=output_node.axis)
                 repeat_dims = o1.data.shape
                 grad_output = np.broadcast_to(grad_output, repeat_dims)
 
@@ -336,3 +396,56 @@ class Summation:
                 o1.grad = grad_output
             else:
                 o1.grad += grad_output
+
+
+class Flip:
+    def forward(self, op: Tensor, axis):
+        data = np.flip(op.data, axis=axis)
+        return Tensor(data=data, requires_grad=op.requires_grad, dtype=op.dtype, inputs_node=[op], operation="Backward<Flip>")
+
+    def backward(self, output_node: Tensor):
+        param = output_node.inputs_node[0]
+        param.grad = np.full(shape=param.data.shape, fill_value=1, dtype=np.float32)
+        param.grad = np.flip(m=output_node.grad, axis=output_node.axis)
+
+
+class Dilation:
+    def forward(self, inp, dilation_factor):
+        self.diletion_factor = dilation_factor
+        self.input_shape = inp.data.shape
+        dilated_shape = [dim * self.dilation_factor for dim in self.input_shape]
+        dilated_data = np.zeros(dilated_shape, dtype=inp.data.dtype)
+
+        slices = [slice(None, None, self.dilation_factor) for _ in range(len(self.input_shape))]
+        dilated_data[tuple(slices)] = inp.data
+
+        return Tensor(data=dilated_data, requires_grad=inp.requires_grad, operation="Backward<Dilation>", inputs_node=[inp], axis=self.diletion_factor)
+
+    def backward(self, output_node):
+        inp = output_node.inputs_node[0]
+        if inp.grad is None:
+            inp.grad = np.zeros_like(inp.data)
+
+        slices = [slice(None, None, output_node.dilation_factor) for _ in range(len(self.input_shape))]
+        inp.grad += output_node.grad[tuple(slices)]
+
+
+class Undilation:
+    def __init__(self, dilation_factor):
+        pass
+
+    def forward(self, inp, dilation_factor):
+        self.dilation_factor = dilation_factor
+        self.input_shape = inp.data.shape
+        undilated_shape = [dim // self.dilation_factor for dim in self.input_shape]
+        undilated_data = inp.data[tuple(slice(None, None, self.dilation_factor) for _ in range(len(self.input_shape)))]
+
+        return Tensor(data=undilated_data, requires_grad=inp.requires_grad, operation="Backward<Undilation>", inputs_node=[inp], axis=self.dilation_factor)
+
+    def backward(self, output_node):
+        inp = output_node.inputs_node[0]
+        if inp.grad is None:
+            inp.grad = np.zeros_like(inp.data)
+
+        slices = [slice(None, None, output_node.dilation_factor) for _ in range(len(self.input_shape))]
+        np.add.at(inp.grad, tuple(slices), output_node.grad)

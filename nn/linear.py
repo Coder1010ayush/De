@@ -35,3 +35,20 @@ class Linear(Module):
     def __repr__(self) -> str:
         strg = f"nn.Linear{self.in_feature, self.out_feature}"
         return strg
+
+
+class Embedding(Module):
+
+    def __init__(self, vocab_size, dim):
+        super().__init__()
+        self.num_embeddings = vocab_size
+        self.dim = dim
+        self.weight = Tensor(np.random.randn(self.num_embeddings, self.dim), requires_grad=True, dtype=np.float32)
+        self._parameters['weight'] = self.weight
+
+    def forward(self, idx):
+        return Tensor(data=self.weight.data[idx], requires_grad=True, dtype=np.float32)
+
+    def __repr__(self) -> str:
+        strg = f"nn.Embedding{self.weight.data.shape}"
+        return strg

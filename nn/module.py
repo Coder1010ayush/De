@@ -9,7 +9,7 @@ class Module:
         self._parameters = {}
 
     def forward(self, *inputs):
-        # will be override in every class
+        # will be override in every neural network class defined in nn module
         raise NotImplementedError
 
     def __call__(self, *inputs):

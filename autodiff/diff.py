@@ -10,7 +10,7 @@ mode = "forward"
 
 class Tensor:
 
-    def __init__(self, data, dtype, requires_grad=False, operation=None, inputs_node=[]) -> None:
+    def __init__(self, data, dtype, requires_grad=False, operation=None, inputs_node=[], axis=None, params=[]) -> None:
         """_summary_
 
         Args:
@@ -29,6 +29,8 @@ class Tensor:
         global TENSOR_COUNTER
         TENSOR_COUNTER += 1
         self.grad = None
+        self.axis = axis
+        self.params = (params)  # keep_dims , dilation
 
     def shape(self):
         return self.data.shape
@@ -72,7 +74,7 @@ class Tensor:
     def matmul(self, other):
         return autodiff.matmul(o1=self, o2=other)
 
-    def __truediv(self, other):
+    def __truediv__(self, other):
         return autodiff.div(o1=self, o2=other)
 
     def reshape(self, shape):
@@ -81,11 +83,24 @@ class Tensor:
     def transpose(self):
         return autodiff.transpose(inp=self, axis=None)
 
+    def flip(self, axis):
+        return autodiff.flip(self=self, axis=axis)
+
     def summation(self, axis: None):
         return autodiff.summation(inp=self, axis=axis)
 
+    @staticmethod
+    def stack(dim, tensors):
+        return autodiff.stack(dim, tensors)
+
     def __pow__(self, other):
         pass
+
+    def sin(self):
+        return autodiff.sin(op=self)
+
+    def cos(self):
+        return autodiff.cos(op=self)
 
     def mean(self):
         return autodiff.mean(inp=self)
@@ -96,14 +111,5 @@ class Tensor:
     def exp(self):
         return autodiff.exp(inp=self)
 
-    def sin(self):
-        pass
-
-    def cos(self):
-        pass
-
     def tan(self):
-        pass
-
-    def tanh(self):
         pass

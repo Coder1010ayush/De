@@ -1,7 +1,7 @@
 # -------------- utf-8 encoding --------------
 import autodiff
 import autodiff.diff
-from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation
+from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation
 
 
 def add(o1, o2):
@@ -31,9 +31,38 @@ def mul(o1, o2):
         return out
 
 
+def flip(self, axis):
+    return Flip().forward(op=self, axis=axis)
+
+
+def max(self, axis, keep_dims):
+    return Max().forward(inp_tensor=self, axis=axis, keep_dims=keep_dims)
+
+
+def dilate(self, dilate_factor):
+    return Dilation().forward(inp=self, dilation_factor=dilate_factor)
+
+
+def undilate(self, dilate_factor):
+    return Undilation().forward(inp=self, dilation_factor=dilate_factor)
+
+
+def stack(dim, tensors):
+    obj = Stack()
+    return obj.forward(dim=dim, tensors=tensors)
+
+
 def matmul(o1, o2):
     out = Multiplication().forward(op1=o1, op2=o2)
     return out
+
+
+def sin(op):
+    return Sin().forward(inp=op)
+
+
+def cos(op):
+    return Cos().forward(inp=op)
 
 
 def div(o1, o2):

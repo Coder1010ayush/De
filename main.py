@@ -1,7 +1,7 @@
 # ------------ utf-8 encoding ----------------
 from autodiff.diff import Tensor
 from initializes.random_init import Initializer
-from nn.linear import Linear
+from nn.linear import Linear, Embedding
 from nn.module import Module, Sequential
 import os
 import sys
@@ -72,8 +72,49 @@ def testin_sequential_layer():
     return out
 
 
+def testing_stack_operation():
+
+    t1 = Tensor(data=np.random.randn(2, 3), requires_grad=True, dtype=np.float32)
+    t2 = Tensor(data=np.random.randn(2, 3), requires_grad=True, dtype=np.float32)
+    t3 = Tensor(data=np.random.randn(2, 3), requires_grad=True, dtype=np.float32)
+    stack_op = Tensor.stack(0, [t1, t2, t3])
+
+    stack_op.backpropogate()
+
+    # Check the gradients of the input tensors
+    print("t1 gradient:\n", t1.grad)
+    print("t2 gradient:\n", t2.grad)
+    print("t3 gradient:\n", t3.grad)
+
+
+def testing_flip_operation():
+    t1 = Tensor(data=np.random.randn(2, 3), requires_grad=True, dtype=np.float32)
+    t2 = Tensor(data=np.random.randn(2, 3), requires_grad=True, dtype=np.float32)
+    o1 = t1.flip(axis=(0, 1))
+    out = o1 + t2
+    f_out = out.mean()
+    f_out.backpropogate()
+
+    print("f_out grad is ", f_out.grad)
+    print("out grad is ", out.grad)
+    print("o1 grad is ", o1.grad)
+    print("t2 grad is ", t2.grad)
+    print("t1 grad is ", t1.grad)
+
+
+def testing_embedding_layer():
+    data = np.random.randint(low=10, high=2000, size=(1000))
+    model = Embedding(vocab_size=1000, dim=768)
+    out = model(10)
+    out.backpropogate()
+    print("output grad is ", out.grad.shape)
+
+
 if __name__ == "__main__":
     # testing_simple_linear_layer()
-    out = testin_sequential_layer()
-    print(out)
-    print(out.shape())
+    # out = testin_sequential_layer()
+    # print(out)
+    # print(out.shape())
+    # testing_stack_operation()
+    testing_flip_operation()
+    # testing_embedding_layer()
