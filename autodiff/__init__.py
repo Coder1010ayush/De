@@ -23,7 +23,7 @@ def subtract(o1, o2):
 
 
 def mul(o1, o2):
-    if isinstance(o2, autodiff.diff.Tensor):
+    if isinstance(o2, float):
         out = MultiplicationScalar().forward(op1=o1, op2=o2)
         return out
     else:
@@ -31,11 +31,9 @@ def mul(o1, o2):
         return out
 
 
-def cat(self, axis):
-    if axis:
-        return Concatenate().forward(inputs=self, axis=axis)
-    else:
-        return Concatenate().forward(inputs=self, axis=0)
+@staticmethod
+def cat(inputs, axis):
+    return Concatenate().forward(inputs=inputs, axis=axis)
 
 
 def flip(self, axis):

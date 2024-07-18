@@ -111,13 +111,38 @@ def testing_embedding_layer():
 
 
 def testin_rnn_cell():
-    data = Initializer().rand(shape=(500, 10), dtype=np.float32, mean=0.5, std=1.0, requires_grad=True)
+    data = Initializer().rand(shape=(6, 500, 10), dtype=np.float32, mean=0.5, std=1.0, requires_grad=True)
     model = RNNCell(input_size=10, hidden_size=20, bias_option=True, non_linear_act="sigmoid")
     hx = Initializer().rand(shape=(500, 20), dtype=np.float32, mean=0.5, std=1.0, requires_grad=True)
-    out = model(data, hx)
-    print(out)
-    out.backpropogate()
+    for idx in range(6):
+        hx = model(Tensor(data=data.data[idx], requires_grad=True, dtype=np.float32), hx)
+        hx.backpropogate()
+    print(hx)
+    print("output shape is ", hx.shape())
+
+
+def testing_gru_cell():
+    data = Initializer().rand(shape=(6, 500, 10), dtype=np.float32, mean=0.5, std=1.0, requires_grad=True)
+    model = GRUCell(input_size=10, hidden_size=20, bias_option=True)
+    hx = Initializer().rand(shape=(500, 20), dtype=np.float32, mean=0.5, std=1.0, requires_grad=True)
+    for idx in range(6):
+        hx = model(Tensor(data=data.data[idx], requires_grad=True, dtype=np.float32), hx)
+        hx.backpropogate()
+    print(hx)
+    print("output shape is ", hx.shape())
+
+
+def testing_lstm_cell():
+    data = Initializer().rand(shape=(6, 20), dtype=np.float32, mean=0.5, std=1.0, requires_grad=True)
+    h_prev = Initializer().rand(shape=(6, 40), dtype=np.float32, mean=0.5, std=1, requires_grad=True)
+    c_prev = Initializer().rand(shape=(6, 40), dtype=np.float32, mean=0.5, std=1, requires_grad=True)
+    model = LSTMCell(input_size=20, hidden_size=40, bias_option=True)
+    hx = [h_prev, c_prev]
+    hx = model(data, hx)
+    hx.backpropogate()
+    print(hx)
+    print("output shape is ", hx.shape())
 
 
 if __name__ == "__main__":
-    testin_rnn_cell()
+    testing_lstm_cell()

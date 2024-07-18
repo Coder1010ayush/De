@@ -1,6 +1,7 @@
 # ---------------- encoding utf-8 ------------------
 from nn.module import Module
 from autodiff.diff import Tensor
+from autodiff import cat
 from initializes.random_init import Initializer
 from nn.functonal import sigmoid, relu, tanh
 import numpy as np
@@ -71,29 +72,23 @@ class RNNCell(Module):
         self.hidden_size = hidden_size
         self.bias_option = bias_option
         self.non_linearity = non_linear_act
-        self.w_ih = rinit.lecun_uniform(shape=(self.hidden_size, self.input_size),
+        self.w_ih = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
                                         n_in=self.hidden_size, requires_grad=True)
         self.w_hh = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
                                         n_in=self.hidden_size, requires_grad=True)
         if bias_option:
             self.bias_ih = rinit.lecun_uniform(
-                shape=(self.hidden_size, 1), n_in=self.hidden_size, requires_grad=True)
+                shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
             self.bias_hh = rinit.lecun_uniform(
-                shape=(self.hidden_size, 1), n_in=self.hidden_size, requires_grad=True)
+                shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
             self._parameters = {'weight_ih': self.w_ih, 'bias_ih': self.bias_ih,
                                 "weight_hh": self.w_hh, "bias_hh": self.bias_hh}
         else:
             self._parameters = {'weight_ih': self.w_ih, "weight_hh": self.w_hh}
 
     def forward(self, x: Tensor, hx: Tensor):
-        print("x shape is ", x.shape())
-        print("hx shape is ", hx.shape())
-        print("w_ih shape is ", self.w_ih.shape())
-        print("w_hh shape is ", self.w_hh.shape())
         if self.bias_option:
-            x.transpose()
-            hx.transpose()
-            h_new = self.w_ih.matmul(x) + self.bias_ih + self.w_hh.matmul(hx) + self.bias_hh
+            h_new = x.matmul(self.w_ih) + self.bias_ih + hx.matmul(self.w_hh) + self.bias_hh
             if self.non_linearity == "relu":
                 h_out = relu(inp_tensor=h_new)
                 return h_out
@@ -125,8 +120,8 @@ class GRUCell(Module):
 
     """
 
-    def __init__(self, input_size, hidden_size, bias_option, ) -> None:
-        rinit = Initializer()
+    def __init__(self, input_size, hidden_size, bias_option) -> None:
+        super().__init__()
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.bias_option = bias_option
@@ -139,23 +134,73 @@ class GRUCell(Module):
         self.update_gate = Linear(in_features=self.input_size+self.hidden_size,
                                   out_features=self.hidden_size, bias_option=True)
 
-        self.add_module["reset_gate"] = self.reset_gate
-        self.add_module["forget_gate"] = self.forget_gate
-        self.add_module["update_gate"] = self.update_gate
+        self.add_module("reset_gate",  self.reset_gate)
+        self.add_module("forget_gate", self.forget_gate)
+        self.add_module("update_gate", self.update_gate)
 
     def forward(self, x: Tensor, hx: Tensor):
-        out = Tensor.cat(inputs=[x, hx], axis=1)
+        ls = []
+        ls.append(x)
+        ls.append(hx)
+        out = cat(inputs=ls, axis=1)
         r_out = sigmoid(inp_tensor=self.reset_gate(out))
         u_out = sigmoid(inp_tensor=self.update_gate(out))
-        f_out = sigmoid(inp_tensor=self.forget_gate(Tensor.cat([x, r_out * hx], axis=1)))
+        print("rout is ", r_out)
+        print(" --------------------------------------- ")
+        print("rout shape is ", r_out.shape(), type(r_out))
+        print("hx shape is ", hx.shape(), type(hx))
+        intermediate_out = r_out * hx
+        f_out = sigmoid(inp_tensor=self.forget_gate(cat([x, intermediate_out], axis=1)))
         h_new = (Tensor(data=1, requires_grad=True, dtype=np.float32) - u_out) * (f_out + (u_out * hx))
         return h_new
 
 
-class LSTMCell:
+class LSTMCell(Module):
 
-    def __init__(self) -> None:
-        pass
+    def __init__(self, input_size: int, hidden_size: int, bias_option: bool = True) -> None:
+        rinit = Initializer()
+        self.input_size = input_size
+        self.hidden_size = hidden_size
+        self.bias_option = bias_option
+        """
+            there are four gates in the lstm cell each gate have its 
+            own weight and bias 
+        """
+        # forget gate
+        self.w_if = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                        n_in=self.hidden_size, requires_grad=True)
+        self.w_hf = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                        n_in=self.hidden_size, requires_grad=True)
+        self.b_f = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
 
-    def forward(self, x):
-        pass
+        # input gate
+        self.w_ii = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                        n_in=self.hidden_size, requires_grad=True)
+        self.w_hi = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                        n_in=self.hidden_size, requires_grad=True)
+        self.b_i = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
+
+        # g gate
+        self.w_ig = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                        n_in=self.hidden_size, requires_grad=True)
+        self.w_hg = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                        n_in=self.hidden_size, requires_grad=True)
+        self.b_g = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
+
+        # o gate
+        self.w_io = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                        n_in=self.hidden_size, requires_grad=True)
+        self.w_ho = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                        n_in=self.hidden_size, requires_grad=True)
+        self.b_o = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
+
+    def forward(self, x: Tensor, hx: list):
+        h_prev = hx[0]
+        c_prev = hx[1]
+        i_out = x.matmul(self.w_ii) + self.b_i + h_prev.matmul(self.w_hi)
+        f_out = x.matmul(self.w_if) + self.b_f + h_prev.matmul(self.w_hf)
+        g_out = x.matmul(self.w_ig) + self.b_g + h_prev.matmul(self.w_hg)
+        o_out = x.matmul(self.w_io)+self.b_o + h_prev.matmul(self.w_ho)
+        out = (f_out * c_prev) + (i_out * g_out)
+        h_out = o_out * (tanh(inp_tensor=out))
+        return h_out

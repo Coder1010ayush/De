@@ -41,6 +41,10 @@ class Tensor:
         srepr = f"Tensor({self.data},{self.dtype})"
         return srepr
 
+    def clip_grad(self, min_val=-1e10, max_val=1e10):
+        if self.grad is not None:
+            np.clip(self.grad, min_val, max_val, out=self.grad)
+
     # backpropogation function
     def backpropogate(self):
         if not self.requires_grad:
@@ -56,6 +60,7 @@ class Tensor:
                     operation_instance = operation_class()
 
                     operation_instance.backward(current_node)
+                    current_node.clip_grad()
 
                 for input_node in current_node.inputs_node:
                     if input_node.requires_grad:
@@ -92,10 +97,6 @@ class Tensor:
     @staticmethod
     def stack(dim, tensors):
         return autodiff.stack(dim, tensors)
-
-    @staticmethod
-    def cat(inputs, axis: None):
-        return autodiff.cat(self=inputs, axis=axis)
 
     def __pow__(self, other):
         pass

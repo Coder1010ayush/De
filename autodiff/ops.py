@@ -92,9 +92,9 @@ class SubEWise:
 
         if o1.requires_grad:
             if o1.grad is None:
-                o1.grad = -self._sum_grad(grad, o1.data.shape)
+                o1.grad = -self._helper_grad(grad, o1.data.shape)
             else:
-                o1.grad -= self._sum_grad(grad, o1.data.shape)
+                o1.grad -= self._helper_grad(grad, o1.data.shape)
 
         if o2.requires_grad:
             if o2.grad is None:
@@ -306,37 +306,43 @@ class MultiplicationScalar:
 
 class MultiplicationEWise:
     def forward(self, op1, op2):
-        req_grad = False
-        out = np.multiply(op1, op2)
-        if op1.requires_grad:
-            req_grad = True
-        elif op2.requires_grad:
-            req_grad = True
-        return Tensor(data=out, requires_grad=req_grad, dtype=out.dtype, inputs_node=[op1, op2], operation="Backward<MultiplicationEWise>")
+        out_data = np.multiply(op1.data, op2.data)
+        req_grad = op1.requires_grad or op2.requires_grad
+        out = Tensor(data=out_data, requires_grad=req_grad, dtype=out_data.dtype,
+                     inputs_node=[op1, op2], operation="Backward<MultiplicationEWise>")
+        return out
 
     def backward(self, output_node: Tensor):
         op1, op2 = output_node.inputs_node
         grad = output_node.grad
 
+        # Handling the gradient for op1
         if op1.requires_grad:
             grad_op1 = grad * op2.data
+
+            # Sum gradients over appropriate axes
             while len(grad_op1.shape) > len(op1.data.shape):
                 grad_op1 = np.sum(grad_op1, axis=0)
             for axis, size in enumerate(op1.data.shape):
                 if size == 1:
                     grad_op1 = np.sum(grad_op1, axis=axis, keepdims=True)
+
             if op1.grad is None:
                 op1.grad = grad_op1
             else:
                 op1.grad += grad_op1
 
+        # Handling the gradient for op2
         if op2.requires_grad:
             grad_op2 = grad * op1.data
+
+            # Sum gradients over appropriate axes
             while len(grad_op2.shape) > len(op2.data.shape):
                 grad_op2 = np.sum(grad_op2, axis=0)
             for axis, size in enumerate(op2.data.shape):
                 if size == 1:
                     grad_op2 = np.sum(grad_op2, axis=axis, keepdims=True)
+
             if op2.grad is None:
                 op2.grad = grad_op2
             else:
