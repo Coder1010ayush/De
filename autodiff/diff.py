@@ -30,7 +30,7 @@ class Tensor:
         TENSOR_COUNTER += 1
         self.grad = None
         self.axis = axis
-        self.params = (params)  # keep_dims , dilation
+        self.params = params  # keep_dims , dilation
 
     def shape(self):
         return self.data.shape

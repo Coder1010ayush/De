@@ -1,7 +1,7 @@
 # -------------- utf-8 encoding --------------
 import autodiff
 import autodiff.diff
-from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation, Concatenate
+from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation, Concatenate, Split
 
 
 def add(o1, o2):
@@ -55,6 +55,10 @@ def undilate(self, dilate_factor):
 def stack(dim, tensors):
     obj = Stack()
     return obj.forward(dim=dim, tensors=tensors)
+
+
+def split(inputs, axis, indices_or_sections):
+    return Split().forward(tensor=inputs, axis=axis, indices_or_sections=indices_or_sections)
 
 
 def matmul(o1, o2):

@@ -1,5 +1,6 @@
 # ------------ utf-8 encoding ----------------
 from autodiff.diff import Tensor
+from autodiff.ops import Split
 from initializes.random_init import Initializer
 from nn.networkx import Linear, Embedding, RNNCell, GRUCell, LSTMCell
 from nn.module import Module, Sequential
@@ -102,6 +103,19 @@ def testing_flip_operation():
     print("t1 grad is ", t1.grad)
 
 
+def testing_split_operation():
+    data = np.random.randn(6, 4)
+    tensor = Tensor(data=data, requires_grad=True, dtype=np.float32)
+    split_op = Split()
+    split_tensors = split_op.forward(tensor, axis=0, indices_or_sections=3)
+    split_op.backward(split_tensors)
+    for it in split_tensors:
+        print("----------------------------")
+        print("grad is ", it.grad)
+        print("----------------------------")
+        print()
+
+
 def testing_embedding_layer():
     data = np.random.randint(low=10, high=2000, size=(1000))
     model = Embedding(vocab_size=1000, dim=768)
@@ -145,4 +159,4 @@ def testing_lstm_cell():
 
 
 if __name__ == "__main__":
-    testing_lstm_cell()
+    testing_split_operation()

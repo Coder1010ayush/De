@@ -159,6 +159,43 @@ class Stack:
             tensor.grad = grad_part.squeeze(self.dim)
 
 
+class Split:
+    def __init__(self):
+        pass
+
+    def forward(self, tensor, axis, indices_or_sections):
+        self.axis = axis
+        self.tensor_shape = tensor.data.shape
+        self.indices_or_sections = indices_or_sections
+        requires_grad = tensor.requires_grad
+        split_data = np.split(tensor.data, indices_or_sections, axis=axis)
+
+        split_tensors = [
+            Tensor(data, np.float32, True, "Backward<Split>", [tensor], self.axis, [self.tensor_shape])
+            for data in split_data
+        ]
+
+        return split_tensors
+
+    def backward(self, output_nodes):
+        for it in output_nodes:
+            it.grad = np.random.randn(*it.data.shape)
+        original_tensor = output_nodes[0].inputs_node[0]
+        grad = np.zeros_like(original_tensor.data)
+        grads = [output_node.grad for output_node in output_nodes]
+        for i, grad_part in enumerate(grads):
+            expanded_grad = np.expand_dims(grad_part, axis=output_nodes[0].axis)
+            grad_slices = [slice(None)] * len(output_nodes[0].params[0])
+            grad_slices[output_nodes[0].axis] = slice(
+                i * grad_part.shape[output_nodes[0].axis], (i + 1) * grad_part.shape[output_nodes[0].axis])
+            grad[tuple(grad_slices)] += expanded_grad.squeeze()
+
+        if original_tensor.grad is None:
+            original_tensor.grad = grad
+        else:
+            original_tensor.grad += grad
+
+
 class Permutation:
     """_summary_
         this class define the forward and backward pass for the pemute() function

@@ -203,4 +203,5 @@ class LSTMCell(Module):
         o_out = x.matmul(self.w_io)+self.b_o + h_prev.matmul(self.w_ho)
         out = (f_out * c_prev) + (i_out * g_out)
         h_out = o_out * (tanh(inp_tensor=out))
-        return h_out
+        h_t = o_out * tanh(h_out)
+        return h_out, h_t
