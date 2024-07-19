@@ -1,7 +1,7 @@
 # -------------- utf-8 encoding --------------
 import autodiff
 import autodiff.diff
-from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation, Concatenate, Split
+from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation, Concatenate, Split, Slice
 
 
 def add(o1, o2):
@@ -29,6 +29,10 @@ def mul(o1, o2):
     else:
         out = MultiplicationEWise().forward(op1=o1, op2=o2)
         return out
+
+
+def slice(inp_tensor, idx):
+    return Slice().forward(inp_tensor=inp_tensor, idx=idx)
 
 
 @staticmethod

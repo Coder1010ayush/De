@@ -10,7 +10,7 @@ mode = "forward"
 
 class Tensor:
 
-    def __init__(self, data, dtype, requires_grad=False, operation=None, inputs_node=[], axis=None, params=[]) -> None:
+    def __init__(self, data, dtype, requires_grad=False, operation=None, inputs_node=[], axis=None, slice_indices=None, params=[]) -> None:
         """_summary_
 
         Args:
@@ -30,6 +30,7 @@ class Tensor:
         TENSOR_COUNTER += 1
         self.grad = None
         self.axis = axis
+        self.slice_indices = slice_indices
         self.params = params  # keep_dims , dilation
 
     def shape(self):
@@ -67,6 +68,9 @@ class Tensor:
                         nodes_to_process.append(input_node)
 
     # =============== arithmetic operators and function implementation =================
+    def __getitem__(self, idx):
+        return autodiff.slice(inp_tensor=self, idx=idx)
+
     def __add__(self, other):
         return autodiff.add(o1=self, o2=other)
 

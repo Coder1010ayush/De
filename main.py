@@ -158,5 +158,13 @@ def testing_lstm_cell():
     print("output shape is ", hx.shape())
 
 
+def testing_slicing():
+    data = Initializer().rand(shape=(6, 20), dtype=np.float32, mean=0.5, std=1, requires_grad=True)
+    out1 = data[2]
+    out = out1.mean()
+    out.backpropogate()
+
+
 if __name__ == "__main__":
-    testing_split_operation()
+    # testing_split_operation()
+    testing_slicing()

@@ -196,6 +196,21 @@ class Split:
             original_tensor.grad += grad
 
 
+class Slice:
+    def forward(self, inp_tensor: Tensor, idx):
+        sliced_data = inp_tensor.data[idx]
+        if inp_tensor.requires_grad:
+            return Tensor(data=sliced_data, requires_grad=True, dtype=inp_tensor.dtype, inputs_node=[inp_tensor], operation="Backward<Slice>", slice_indices=idx)
+        else:
+            return Tensor(data=sliced_data, requires_grad=False, dtype=inp_tensor.dtype)
+
+    def backward(self, output_node: Tensor):
+        inp_tensor = output_node.inputs_node[0]
+        if inp_tensor.grad is None:
+            inp_tensor.grad = np.zeros_like(inp_tensor.data)
+        np.add.at(inp_tensor.grad, output_node.slice_indices, output_node.grad)
+
+
 class Permutation:
     """_summary_
         this class define the forward and backward pass for the pemute() function
