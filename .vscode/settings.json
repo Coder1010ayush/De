@@ -1,6 +1,6 @@
 {
     "editor.formatOnSave": true,
-    "editor.fontSize": 13,
+    "editor.fontSize": 15,
     "editor.lineHeight": 1.9,
     "editor.bracketPairColorization.enabled": true,
     "editor.autoClosingBrackets": "always",
@@ -12,4 +12,6 @@
     "editor.autoClosingQuotes": "languageDefined",
     "editor.autoSurround": "languageDefined",
     "window.zoomLevel": -1,
+    "editor.fontWeight": "550",
+    "workbench.editor.enablePreviewFromCodeNavigation": true,
 }

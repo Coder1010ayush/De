@@ -2,6 +2,15 @@ from autodiff.diff import Tensor
 import os
 
 
+class Parameter:
+    def __init__(self, value):
+        self.value = value
+        self.grad = None
+
+    def __repr__(self):
+        return f'Parameter(value={self.value}, grad={self.grad})'
+
+
 class Module:
     def __init__(self):
         self.training = True
@@ -35,6 +44,9 @@ class Module:
     def add_module(self, name, module):
         """Add a child module to the current module."""
         self._modules[name] = module
+
+    def add_parameter(self, name, value):
+        self._parameters[name] = Parameter(value)
 
 
 class Sequential(Module):
