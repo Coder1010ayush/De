@@ -8,8 +8,10 @@ import numpy as np
 import sys
 from initializes.random_init import Initializer as rinit
 from nn.module import Module, Sequential, Parameter
+from nn.networkx import Linear
 from nn.networkx import Embedding
 from optimizers.optim import SGD
+from nn.functonal import Relu, Sigmoid, Softmax
 from autodiff.diff import Tensor
 
 
@@ -66,3 +68,28 @@ class PositionalEncoding(Module):
     def forward(self, x: Tensor):
         out = x + self.encoding[:, :x.shape()[1], :]
         return out
+
+
+class Attention:
+
+    """
+        this class implement Attention layer 
+        Args:
+            d_model : dimension of output and input seq
+    """
+
+    def __init__(self, d_model) -> None:
+        self.d_model = d_model
+        self.query_mat = Linear(in_features=self.d_model, out_features=self.d_model, bias_option=True)
+        self.key_mat = Linear(in_features=self.d_model, out_features=self.d_model, bias_option=True)
+        self.value_mat = Linear(in_features=self.d_model, out_features=self.d_model, bias_option=True)
+
+    def forward(self, key, query, value):
+        q_out: Tensor = self.query_mat(query)
+        k_out: Tensor = self.key_mat(key)
+        v_out: Tensor = self.value_mat(value)
+
+        scores = q_out.matmul(other=k_out.transpose())
+        score_weight = Softmax().forward(inp_tensor=scores, dim=-1)
+        final_score = score_weight.matmul(other=v_out)
+        return final_score

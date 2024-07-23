@@ -1,5 +1,5 @@
 # ----------------------- utf-8 encoding --------------------------
-from autodiff.ops import Relu, Sigmoid, Tanh
+from autodiff.ops import Relu, Sigmoid, Tanh, Softmax
 import numpy as np
 import os
 import sys
@@ -17,3 +17,7 @@ def relu(inp_tensor):
 
 def tanh(inp_tensor):
     return Tanh().forward(inp_tensor=inp_tensor)
+
+
+def sofmax(inp_tensor, dim):
+    return Softmax().forward(inp_tensor, dim)

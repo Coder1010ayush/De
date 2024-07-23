@@ -192,5 +192,5 @@ if __name__ == "__main__":
     # testing_split_operation()
     # testing_slicing()
     # linear_layer_example()
-    # testing_slicing_operation()
+    testing_slicing_operation()
     pass

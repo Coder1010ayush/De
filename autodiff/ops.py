@@ -125,19 +125,22 @@ class Reshape:
 
 class Transpose:
     """_summary_
-        this class define the forward and backward pass for the transpose function
-        as transpose the data of tensor object similarly the backward of that
-        tensor object will be transposed.
+        This class defines the forward and backward pass for the transpose function.
+        The forward pass transposes the data of a Tensor object.
+        The backward pass transposes the gradient of that Tensor object using the same axes.
     """
-    axis = None
 
-    def forward(self, inp: Tensor, axis: None):
+    def forward(self, inp: Tensor, axis=None):
         self.axis = axis
-        inp.data = np.transpose(a=inp.data, axes=axis)
-        inp.axis = self.axis
+        data = np.transpose(a=inp.data, axes=axis)
+        out = Tensor(data=data, requires_grad=inp.requires_grad, dtype=inp.dtype,
+                     inputs_node=[inp], operation="Backward<Transpose>")
+        out.axis = axis
+        return out
 
-    def backward(self, inp: Tensor):
-        inp.grad = np.transpose(a=inp.grad, axes=inp.axis)
+    def backward(self, output_node: Tensor):
+        inp = output_node.inputs_node[0]
+        inp.grad = np.transpose(a=output_node.grad, axes=output_node.axis if output_node.axis else None)
 
 
 class Stack:
@@ -596,3 +599,29 @@ class Relu:
     def backward(self, output_node: Tensor):
         input_node = output_node.inputs_node[0]
         input_node.grad = np.where(output_node.data > 0, 1, 0)
+
+
+class Softmax:
+    """_summary_
+        This class defines the forward and backward pass for the softmax function.
+        The forward pass computes the softmax of the input tensor data.
+        The backward pass computes the gradient of the softmax output.
+    """
+
+    def __init__(self):
+        self.axis = -1
+
+    def forward(self, inp_tensor: Tensor, dim: int):
+        exps = np.exp(inp_tensor.data - np.max(inp_tensor.data, axis=dim, keepdims=True))
+        softmax_output = exps / np.sum(exps, axis=dim, keepdims=True)
+        out = Tensor(data=softmax_output, requires_grad=inp_tensor.requires_grad,
+                     dtype=inp_tensor.dtype, inputs_node=[inp_tensor], operation="Backward<Softmax>", axis=dim)
+        return out
+
+    def backward(self, output_node: Tensor):
+        inp = output_node.inputs_node[0]
+        grad_output = output_node.grad
+        softmax_output = output_node.data
+        s = softmax_output.reshape(-1, 1)
+        jacobian = np.diagflat(s) - np.dot(s, s.T)
+        inp.grad = np.dot(jacobian, grad_output)
