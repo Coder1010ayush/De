@@ -117,6 +117,11 @@ class RNNCell(Module):
         return strg
 
 
+class RNN:
+    def __init__(self) -> None:
+        pass
+
+
 class GRUCell(Module):
     """
             \begin{array}{ll}

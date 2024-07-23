@@ -33,8 +33,8 @@ class Initializer:
         data = np.full(shape=shape, fill_value=val, dtype=dtype)
         return Tensor(data=data, requires_grad=requires_grad, dtype=dtype)
 
-    def arange(self, n1=0, n2=100, dtype=np.float32, requires_grad=False):
-        data = np.arange(start=n1, step=n2, dtype=dtype)
+    def arange(self, n1=0, n2=100, n3=1, dtype=np.float32, requires_grad=False):
+        data = np.arange(start=n1, step=n3, stop=n2, dtype=dtype)
         return Tensor(data=data, requires_grad=requires_grad, dtype=dtype)
 
     def uniform(self, shape, requires_grad=False, low=0, high=1):

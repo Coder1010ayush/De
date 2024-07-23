@@ -484,6 +484,17 @@ class Summation:
                 o1.grad += grad_output
 
 
+class Sqrt:
+
+    def forward(self, inp_tensor: Tensor):
+        out = np.sqrt(inp_tensor.data)
+        return Tensor(data=out, dtype=out.dtype, requires_grad=inp_tensor.requires_grad, operation="Backward<Sqrt>", inputs_node=[inp_tensor])
+
+    def backward(self, output_node: Tensor):
+        inputs_node = output_node.inputs_node[0]
+        inputs_node.grad = output_node.grad/2 * (1/np.sqrt(inputs_node.data))
+
+
 class Flip:
     def forward(self, op: Tensor, axis):
         data = np.flip(op.data, axis=axis)

@@ -1,7 +1,7 @@
 # -------------- utf-8 encoding --------------
 import autodiff
 import autodiff.diff
-from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation, Concatenate, Split, Slice
+from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation, Concatenate, Split, Slice, Sqrt
 
 
 def add(o1, o2):
@@ -42,6 +42,10 @@ def cat(inputs, axis):
 
 def flip(self, axis):
     return Flip().forward(op=self, axis=axis)
+
+
+def sqrt(self):
+    return Sqrt().forward(inp_tensor=self)
 
 
 def max(self, axis, keep_dims):

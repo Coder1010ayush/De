@@ -102,6 +102,9 @@ class Tensor:
     def stack(dim, tensors):
         return autodiff.stack(dim, tensors)
 
+    def sqrt(self):
+        return autodiff.sqrt(self)
+
     def __pow__(self, other):
         pass
 

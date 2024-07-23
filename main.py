@@ -179,7 +179,18 @@ def linear_layer_example():
         print("loss is ", loss)
 
 
+def testing_slicing_operation():
+    a = Initializer().lecun_normal(shape=(10, 10, 10), n_in=10, requires_grad=True)
+    b = a[:, :5, :3]
+    print(b)
+    print(b.shape())
+    out = b.mean()
+    b.backpropogate()
+
+
 if __name__ == "__main__":
     # testing_split_operation()
     # testing_slicing()
-    linear_layer_example()
+    # linear_layer_example()
+    # testing_slicing_operation()
+    pass
