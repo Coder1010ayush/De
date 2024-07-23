@@ -25,15 +25,16 @@ class Linear(Module):
         self.weight = Tensor(data=np.random.randn(in_features, out_features), requires_grad=True, dtype=np.float32)
         if self.bias_option:
             self.bias = Tensor(data=np.zeros(out_features), requires_grad=True, dtype=np.float32)
-            self._parameters = {'weight': self.weight, 'bias': self.bias}
+            self.add_parameter(name=f"bias", value=self.bias)
+            self.add_parameter(name=f"weights", value=self.weight)
         else:
-            self._parameters = {"weight": self.weight}
+            self.add_parameter(name=f"weights", value=self.weight)
 
     def forward(self, x: Tensor):
         if self.bias_option:
-            return x.matmul(other=self.weight) + self.bias
+            return x.matmul(other=self._parameters["weights"].value) + self._parameters["bias"].value
         else:
-            return x.matmul(other=x)
+            return x.matmul(other=self._parameters["weights"].value)
 
     def __repr__(self) -> str:
         strg = f"nn.Linear{self.in_feature, self.out_feature}"
@@ -48,9 +49,10 @@ class Embedding(Module):
         self.dim = dim
         self.weight = Tensor(np.random.randn(self.num_embeddings, self.dim), requires_grad=True, dtype=np.float32)
         self._parameters['weight'] = self.weight
+        self.add_parameter(name=f"weights", value=self.weight)
 
     def forward(self, idx):
-        return Tensor(data=self.weight.data[idx], requires_grad=True, dtype=np.float32)
+        return Tensor(data=self._parameters["weights"].value[idx], requires_grad=True, dtype=np.float32)
 
     def __repr__(self) -> str:
         strg = f"nn.Embedding{self.weight.data.shape}"
@@ -81,14 +83,20 @@ class RNNCell(Module):
                 shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
             self.bias_hh = rinit.lecun_uniform(
                 shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
-            self._parameters = {'weight_ih': self.w_ih, 'bias_ih': self.bias_ih,
-                                "weight_hh": self.w_hh, "bias_hh": self.bias_hh}
+            self.add_parameter(name="w_ih", value=self.w_ih)
+            self.add_parameter(name="w_hh", value=self.w_hh)
+            self.add_parameter(name="b_ih", value=self.bias_ih)
+            self.add_parameter(name="b_hh", value=self.bias_hh)
+
         else:
-            self._parameters = {'weight_ih': self.w_ih, "weight_hh": self.w_hh}
+            self.add_parameter(name="w_ih", value=self.w_ih)
+            self.add_parameter(name="w_hh", value=self.w_hh)
 
     def forward(self, x: Tensor, hx: Tensor):
         if self.bias_option:
-            h_new = x.matmul(self.w_ih) + self.bias_ih + hx.matmul(self.w_hh) + self.bias_hh
+            h_new = x.matmul(self._parameters["w_ih"].value) + \
+                self._parameters["b_ih"].value + \
+                hx.matmul(self._parameters["w_hh"].value) + self._parameters["b_hh"].value
             if self.non_linearity == "relu":
                 h_out = relu(inp_tensor=h_new)
                 return h_out
@@ -96,7 +104,7 @@ class RNNCell(Module):
                 h_out = sigmoid(inp_tensor=h_new)
                 return h_out
         else:
-            h_new = self.w_ih.matmul(x) + self.w_hh.matmul(hx)
+            h_new = self._parameters["w_ih"].value.matmul(x) + self._parameters["w_hh"].value.matmul(hx)
             if self.non_linearity == "relu":
                 h_out = relu(inp_tensor=h_new)
                 return h_out
@@ -167,41 +175,96 @@ class LSTMCell(Module):
             own weight and bias 
         """
         # forget gate
-        self.w_if = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
-                                        n_in=self.hidden_size, requires_grad=True)
-        self.w_hf = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
-                                        n_in=self.hidden_size, requires_grad=True)
-        self.b_f = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
+        if self.bias_option:
+            self.w_if = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.w_hf = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.b_f = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
 
-        # input gate
-        self.w_ii = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
-                                        n_in=self.hidden_size, requires_grad=True)
-        self.w_hi = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
-                                        n_in=self.hidden_size, requires_grad=True)
-        self.b_i = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
+            # input gate
+            self.w_ii = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.w_hi = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.b_i = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
 
-        # g gate
-        self.w_ig = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
-                                        n_in=self.hidden_size, requires_grad=True)
-        self.w_hg = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
-                                        n_in=self.hidden_size, requires_grad=True)
-        self.b_g = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
+            # g gate
+            self.w_ig = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.w_hg = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.b_g = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
 
-        # o gate
-        self.w_io = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
-                                        n_in=self.hidden_size, requires_grad=True)
-        self.w_ho = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
-                                        n_in=self.hidden_size, requires_grad=True)
-        self.b_o = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
+            # o gate
+            self.w_io = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.w_ho = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.b_o = rinit.lecun_normal(shape=(1, self.hidden_size), n_in=self.hidden_size, requires_grad=True)
+            self.add_parameter(name="w_if", value=self.w_if)
+            self.add_parameter(name="w_hf", value=self.w_hf)
+            self.add_parameter(name="w_ii", value=self.w_ii)
+            self.add_parameter(name="w_hi", value=self.w_hi)
+            self.add_parameter(name="w_ig", value=self.w_ig)
+            self.add_parameter(name="w_hg", value=self.w_hg)
+            self.add_parameter(name="w_io", value=self.w_io)
+            self.add_parameter(name="w_ho", value=self.w_ho)
+            self.add_parameter("b_o", self.b_o)
+            self.add_parameter("b_g", self.b_g)
+            self.add_parameter("b_i", self.b_i)
+            self.add_parameter("b_f", self.b_f)
+        else:
+            self.w_if = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.w_hf = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            # input gate
+            self.w_ii = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.w_hi = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            # g gate
+            self.w_ig = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.w_hg = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            # o gate
+            self.w_io = rinit.lecun_uniform(shape=(self.input_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.w_ho = rinit.lecun_uniform(shape=(self.hidden_size, self.hidden_size),
+                                            n_in=self.hidden_size, requires_grad=True)
+            self.add_parameter(name="w_if", value=self.w_if)
+            self.add_parameter(name="w_hf", value=self.w_hf)
+            self.add_parameter(name="w_ii", value=self.w_ii)
+            self.add_parameter(name="w_hi", value=self.w_hi)
+            self.add_parameter(name="w_ig", value=self.w_ig)
+            self.add_parameter(name="w_hg", value=self.w_hg)
+            self.add_parameter(name="w_io", value=self.w_io)
+            self.add_parameter(name="w_ho", value=self.w_ho)
 
     def forward(self, x: Tensor, hx: list):
         h_prev = hx[0]
         c_prev = hx[1]
-        i_out = x.matmul(self.w_ii) + self.b_i + h_prev.matmul(self.w_hi)
-        f_out = x.matmul(self.w_if) + self.b_f + h_prev.matmul(self.w_hf)
-        g_out = x.matmul(self.w_ig) + self.b_g + h_prev.matmul(self.w_hg)
-        o_out = x.matmul(self.w_io)+self.b_o + h_prev.matmul(self.w_ho)
-        out = (f_out * c_prev) + (i_out * g_out)
-        h_out = o_out * (tanh(inp_tensor=out))
-        h_t = o_out * tanh(h_out)
-        return h_out, h_t
+        if self.bias_option:
+            i_out = x.matmul(self._parameters["w_ii"].value) + \
+                self._parameters["b_i"].value + h_prev.matmul(self._parameters["w_hi"].value)
+            f_out = x.matmul(self._parameters["w_if"].value) + \
+                self._parameters["b_f"].value + h_prev.matmul(self._parameters["w_hf"].value)
+            g_out = x.matmul(self._parameters["w_ig"].value) + \
+                self._parameters["b_g"].value + h_prev.matmul(self._parameters["w_hg"].value)
+            o_out = x.matmul(self._parameters["w_io"].value) + \
+                self._parameters["b_o"].value + h_prev.matmul(self._parameters["w_ho"].value)
+            out = (f_out * c_prev) + (i_out * g_out)
+            h_out = o_out * (tanh(inp_tensor=out))
+            h_t = o_out * tanh(h_out)
+            return h_out, h_t
+        else:
+            i_out = x.matmul(self._parameters["w_ii"].value) + h_prev.matmul(self._parameters["w_hi"].value)
+            f_out = x.matmul(self._parameters["w_if"].value) + h_prev.matmul(self._parameters["w_hf"].value)
+            g_out = x.matmul(self._parameters["w_ig"].value) + h_prev.matmul(self._parameters["w_hg"].value)
+            o_out = x.matmul(self._parameters["w_io"].value) + h_prev.matmul(self._parameters["w_ho"].value)
+            out = (f_out * c_prev) + (i_out * g_out)
+            h_out = o_out * (tanh(inp_tensor=out))
+            h_t = o_out * tanh(h_out)
+            return h_out, h_t

@@ -4,6 +4,7 @@ from autodiff.ops import Split
 from initializes.random_init import Initializer
 from nn.networkx import Linear, Embedding, RNNCell, GRUCell, LSTMCell
 from nn.module import Module, Sequential
+from optimizers.optim import SGD
 import os
 import sys
 import json
@@ -165,6 +166,20 @@ def testing_slicing():
     out.backpropogate()
 
 
+def linear_layer_example():
+    model = Linear(in_features=10, out_features=20, bias_option=True)
+    data = Tensor(data=np.random.rand(30, 10), dtype=np.float32, requires_grad=True)
+    optimizer = SGD(lr=0.1)
+    for i in range(10):
+        out = model(data)
+        loss = out.mean()
+        loss.backpropogate()
+        optimizer.step(parameters=model.parameters())
+        optimizer.zero_grad()
+        print("loss is ", loss)
+
+
 if __name__ == "__main__":
     # testing_split_operation()
-    testing_slicing()
+    # testing_slicing()
+    linear_layer_example()

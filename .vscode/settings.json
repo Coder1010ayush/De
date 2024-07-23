@@ -12,6 +12,6 @@
     "editor.autoClosingQuotes": "languageDefined",
     "editor.autoSurround": "languageDefined",
     "window.zoomLevel": -1,
-    "editor.fontWeight": "550",
+    "editor.fontWeight": "400",
     "workbench.editor.enablePreviewFromCodeNavigation": true,
 }

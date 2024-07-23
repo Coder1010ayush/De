@@ -48,6 +48,10 @@ class Module:
     def add_parameter(self, name, value):
         self._parameters[name] = Parameter(value)
 
+    @property
+    def module_list(self):
+        return list(self._modules.values())
+
 
 class Sequential(Module):
     """
