@@ -137,3 +137,42 @@ class MultiHeadAttentio(Module):
             attn_weight = self.dp_layer(attn_weight)
         attn_output = attn_weight.matmul(v)
         return attn_output, attn_weight
+
+
+class FeedForward(Module):
+
+    def __init__(self, d_model: int, ffn_hidden: int,  dropout: float):
+        super().__init__()
+        self.d_model = d_model
+        self.dropout = dropout
+        self.ffn_hidden_unit = ffn_hidden
+        self.linear_layer_1 = Linear(in_features=self.d_model, out_features=self.ffn_hidden_unit, bias_option=True)
+        self.linear_layer_2 = Linear(in_features=self.ffn_hidden_unit, out_features=self.d_model, bias_option=True)
+        self.drop_layer = Dropout(dropout=self.dropout)
+
+    def forward(self, x: Tensor):
+        l1 = self.linear_layer_1(x)
+        relu_out = Relu().forward(inp_tensor=l1)
+        dropout_out = self.drop_layer(relu_out)
+        l2 = self.linear_layer_2(dropout_out)
+        return l2
+
+
+class LayerNormalization(Module):
+
+    def __init__(self, dim: int, epsilon: float = 10**-6):
+        super().__init__()
+        self.epsilon = Tensor(data=epsilon, dtype=np.float32, requires_grad=True)
+        self.betas = rinit().rand(shape=dim, dtype=np.float16, mean=0, std=1.0, requires_grad=True)
+        self.gamma = rinit().rand(shape=dim, dtype=np.float16, mean=0, std=1.0, requires_grad=True)
+        self.add_parameter(name="gammas", value=self.gamma)
+        self.add_parameter(name="betas", value=self.betas)
+
+    def forward(self, x: Tensor):
+        out = x.flatten()
+        mean_ = out.mean()
+        std_ = out.std()
+        o = self.epsilon + std_
+        transformed_x = (x - mean_) / o.sqrt()
+        x_out = transformed_x * self.gamma + self.betas
+        return x_out

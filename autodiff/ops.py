@@ -634,3 +634,43 @@ class Softmax:
         s = softmax_output.reshape(-1, 1)
         jacobian = np.diagflat(s) - np.dot(s, s.T)
         inp.grad = np.dot(jacobian, grad_output)
+
+
+class Flatten:
+
+    def forward(self, inp_tensor: Tensor):
+        data = inp_tensor.data.flatten()
+        return Tensor(data=data, requires_grad=inp_tensor.requires_grad, dtype=inp_tensor.data.dtype, operation="Backward<Flatten>", inputs_node=[inp_tensor])
+
+    def backward(self, output_node: Tensor):
+        input_node: Tensor = output_node.inputs_node[0]
+        input_node.grad = output_node.grad.reshape(input_node.data.shape)
+
+
+class Std:
+    """
+    This class defines the forward and backward pass for the standard deviation function on a Tensor object.
+    Gradients are also computed with respect to the mean.
+    """
+
+    def forward(self, inp_tensor: Tensor):
+        mean = np.mean(inp_tensor.data)
+        variance = np.mean((inp_tensor.data - mean) ** 2)
+        std_dev = np.sqrt(variance)
+        return Tensor(
+            data=std_dev,
+            dtype=inp_tensor.data.dtype,
+            requires_grad=inp_tensor.requires_grad,
+            inputs_node=[inp_tensor],
+            operation="Backward<StandardDeviation>"
+        )
+
+    def backward(self, output_node: Tensor):
+        inp = output_node.inputs_node[0]
+        mean = np.mean(inp.data)
+        variance = np.mean((inp.data - mean) ** 2)
+        std_dev = np.sqrt(variance)
+
+        # Gradient of the standard deviation with respect to the input
+        grad = (inp.data - mean) / (std_dev * inp.data.size)
+        inp.grad = grad * output_node.grad

@@ -1,7 +1,7 @@
 # -------------- utf-8 encoding --------------
 import autodiff
 import autodiff.diff
-from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation, Concatenate, Split, Slice, Sqrt
+from autodiff.ops import AddEWise, AddScalar, SubEWise, SubtractionScalar, Log, Permutation, Transpose, Negation, Reshape, Mean, Exp, Multiplication, MultiplicationEWise, MultiplicationScalar, DivisionEWise, Summation, Stack, Sin, Cos, Flip, Max, Dilation, Undilation, Concatenate, Split, Slice, Sqrt, Flatten, Std
 
 
 def add(o1, o2):
@@ -33,6 +33,10 @@ def mul(o1, o2):
 
 def slice(inp_tensor, idx):
     return Slice().forward(inp_tensor=inp_tensor, idx=idx)
+
+
+def flatten(inp_tensor):
+    return Flatten().forward(inp_tensor=inp_tensor)
 
 
 @staticmethod
@@ -113,3 +117,7 @@ def exp(inp):
 
 def summation(inp, axis=None):
     return Summation().forward(inp=inp, axis=axis)
+
+
+def std(inp_tensor):
+    return Std().forward(inp_tensor=inp_tensor)

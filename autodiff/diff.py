@@ -123,5 +123,11 @@ class Tensor:
     def exp(self):
         return autodiff.exp(inp=self)
 
+    def flatten(self):
+        return autodiff.flatten(inp_tensor=self)
+
+    def std(self):
+        return autodiff.std(inp_tensor=self)
+
     def tan(self):
         pass
