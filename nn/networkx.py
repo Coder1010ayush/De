@@ -293,3 +293,20 @@ class Dropout(Module):
         self.mask = Tensor(data=(np.random.rand(*x.shape()) > self.dropout) /
                            (1.0 - self.dropout), dtype=np.float32, requires_grad=True)
         return self.mask * x
+
+
+class Residual(Module):
+    """
+        Adding previous output to current output.
+    Args:
+        Module (_type_): _description_
+        fn : Module
+    """
+
+    def __init__(self, fn: Module):
+        super().__init__()
+        self.fn = fn
+
+    def forward(self, x: Tensor):
+        out = x + self.fn(x)
+        return out
