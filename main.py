@@ -181,11 +181,11 @@ def linear_layer_example():
 
 def testing_slicing_operation():
     a = Initializer().lecun_normal(shape=(10, 10, 10), n_in=10, requires_grad=True)
-    b = a[:, :5, :3]
-    print(b)
+    b = a.reshape(shape=(10, 100))
+
+    c = b.mean()
+    c.backpropogate()
     print(b.shape())
-    out = b.mean()
-    b.backpropogate()
 
 
 if __name__ == "__main__":

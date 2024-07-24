@@ -273,3 +273,23 @@ class LSTMCell(Module):
             h_out = o_out * (tanh(inp_tensor=out))
             h_t = o_out * tanh(h_out)
             return h_out, h_t
+
+
+class Dropout(Module):
+    """
+    it helps to less overfit the model
+
+    Args:
+        Module (_type_): _description_
+        self.dropout = float
+        self.mask = np.ndarray
+    """
+
+    def __init__(self, dropout: float) -> None:
+        self.dropout = dropout
+        self.mask = None
+
+    def forward(self, x: Tensor):
+        self.mask = Tensor(data=(np.random.rand(*x.shape()) > self.dropout) /
+                           (1.0 - self.dropout), dtype=np.float32, requires_grad=True)
+        return self.mask * x

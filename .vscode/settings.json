@@ -1,7 +1,7 @@
 {
     "editor.formatOnSave": true,
-    "editor.fontSize": 15,
-    "editor.lineHeight": 1.9,
+    "editor.fontSize": 14,
+    "editor.lineHeight": 2.0,
     "editor.bracketPairColorization.enabled": true,
     "editor.autoClosingBrackets": "always",
     "editor.formatOnPaste": true,
@@ -12,6 +12,9 @@
     "editor.autoClosingQuotes": "languageDefined",
     "editor.autoSurround": "languageDefined",
     "window.zoomLevel": -1,
-    "editor.fontWeight": "400",
-    "workbench.editor.enablePreviewFromCodeNavigation": true,
+    "git.ignoreLimitWarning": true,
+    "workbench.colorCustomizations": {
+        "editor.background": "#000000",
+        "editorBracketMatch.background": "#2246f6",
+    },
 }

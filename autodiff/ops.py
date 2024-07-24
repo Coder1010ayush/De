@@ -114,11 +114,20 @@ class SubEWise:
 
 
 class Reshape:
-    def forward(self, inp: Tensor, shape: tuple):
-        inp.data = np.reshape(a=inp.data, newshape=shape)
+    def forward(self, inp: Tensor, shape: tuple) -> Tensor:
+        reshaped_data = np.reshape(a=inp.data, newshape=shape)
+        return Tensor(
+            data=reshaped_data,
+            requires_grad=inp.requires_grad,
+            dtype=inp.dtype,
+            inputs_node=[inp],
+            operation="Backward<Reshape>"
+        )
 
-    def backward(self, inp: Tensor):
-        inp.grad = np.reshape(a=inp.grad, newshape=inp.data.shape)
+    def backward(self, output_node: Tensor):
+        input_node = output_node.inputs_node[0]
+        input_node.grad = np.reshape(a=output_node.grad, newshape=input_node.data.shape)
+
 
 # ----------------- transpose and permute both are same for now
 

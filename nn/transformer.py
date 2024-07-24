@@ -8,7 +8,7 @@ import numpy as np
 import sys
 from initializes.random_init import Initializer as rinit
 from nn.module import Module, Sequential, Parameter
-from nn.networkx import Linear
+from nn.networkx import Linear, Dropout
 from nn.networkx import Embedding
 from optimizers.optim import SGD
 from nn.functonal import Relu, Sigmoid, Softmax
@@ -93,3 +93,47 @@ class Attention:
         score_weight = Softmax().forward(inp_tensor=scores, dim=-1)
         final_score = score_weight.matmul(other=v_out)
         return final_score
+
+
+class MultiHeadAttentio(Module):
+
+    """
+        multihead attention class is implemented as defined in the paper.
+
+    """
+
+    def __init__(self, d_model: int, num_heads: int, dropout: float) -> None:
+        self.d_model = d_model
+        self.dropout = dropout
+        self.num_heads = num_heads
+        assert self.d_model % self.num_heads == 0
+        self.head_d_model = self.d_model / self.num_heads
+        self.q_layer = Linear(in_features=self.d_model, out_features=self.d_model, bias_option=True)
+        self.k_layer = Linear(in_features=self.d_model, out_features=self.d_model, bias_option=True)
+        self.v_layer = Linear(in_features=self.d_model, out_features=self.d_model, bias_option=True)
+        self.o_layer = Linear(in_features=self.d_model, out_features=self.d_model, bias_option=True)
+        self.dp_layer = Dropout(dropout=self.dropout)
+
+    def forward(self, key: Tensor, query: Tensor, value: Tensor, attn_mask=None):
+        # attn_mask is not implemented for now
+        batch, seq_length, emb_dim = query.shape()  # similarly key and values are given
+        q_out: Tensor = self.q_layer(query)
+        k_out: Tensor = self.k_layer(key)
+        v_out: Tensor = self.v_layer(value)
+
+        # reshaping it in expected shape
+        q_out = q_out.reshape(shape=(batch, self.num_heads, seq_length, self.head_d_model))
+        k_out = k_out.reshape(shape=(batch, self.num_heads, seq_length, self.head_d_model))
+        v_out = v_out.reshape(shape=(batch, self.num_heads, seq_length, self.head_d_model))
+
+        # now calculate scaled dot product as mentioned in the paper
+        attn_score, attn_weights = self.scaled_dot_product(q=q_out, k=k_out, v=v_out, attn_mask=attn_mask)
+
+    def scaled_dot_product(self, q: Tensor, k: Tensor, v: Tensor, attn_mask: Tensor = None):
+        batch, num_head, seq_len, head_dim = k.shape()
+        out = q.matmul(k.reshape(shape=(batch, num_head, head_dim, seq_len)))
+        attn_weight = Softmax().forward(inp_tensor=out, dim=-1)
+        if self.dropout > 0.0:
+            attn_weight = self.dp_layer(attn_weight)
+        attn_output = attn_weight.matmul(v)
+        return attn_output, attn_weight
